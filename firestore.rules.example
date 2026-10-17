@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function adminDoc() { return get(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && (adminDoc().data.enabled == true || adminDoc().data.active == true);
+    }
+    // Secret Telegram token is encrypted by Cloud Functions. Never allow direct client access.
+    match /privateSettings/{docId} { allow read, write: if false; }
+    match /admins/{uid} { allow read: if signedIn() && (request.auth.uid == uid || isAdmin()); allow write: if false; }
+    match /settings/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /admin/payment { allow read: if signedIn(); allow write: if isAdmin(); }
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid;
+      // Profile-only updates from users. Balance and spend totals must be updated server-side before production.
+      allow update: if isAdmin() || (signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','phone']));
+      allow delete: if isAdmin();
+    }
+    match /orders/{orderId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+    match /deposits/{depositId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+    match /{collection}/{docId} {
+      allow read: if collection in ['games','categories','packages','products','ranks','codes'] && signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

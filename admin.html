@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#006a4e">
+<title>TIGER TOPUP — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body class="select-none">
+
+<!-- LOGIN -->
+<section id="login-sec" class="z-50">
+  <div class="login-scene">
+    <!-- Large animated Bangladesh flag -->
+    <div class="bd-flag-showcase" aria-hidden="true">
+      <div class="pole"></div>
+      <div class="cloth"></div>
+    </div>
+
+    <!-- Admin Login Card -->
+    <div class="auth-card">
+      <h1 class="auth-brand">TIGER <span>TOPUP</span></h1>
+      <p class="auth-tagline">Admin Control Panel</p>
+
+      <form onsubmit="event.preventDefault();adminLogin();">
+        <div class="auth-field">
+          <input type="email" id="admin-email" placeholder="Admin Email" class="auth-input" autocomplete="email">
+          <i class="fas fa-envelope auth-icon"></i>
+        </div>
+        <div class="auth-field">
+          <input type="password" id="admin-pass" placeholder="Password" class="auth-input" autocomplete="current-password">
+          <i class="fas fa-lock auth-icon"></i>
+          <button type="button" onclick="togglePass('admin-pass',this)" class="auth-eye-btn"><i class="fas fa-eye"></i></button>
+        </div>
+        <button type="submit" class="auth-btn"><i class="fas fa-sign-in-alt"></i> LOG IN</button>
+      </form>
+
+      <p class="text-center text-[10px] text-gray-400 mt-5"><i class="fas fa-shield-halved"></i> Authorized personnel only</p>
+    </div>
+  </div>
+</section>
+
+<!-- ADMIN APP -->
+<div id="admin-app" class="app-shell hidden">
+  <header class="bg-white sticky top-0 z-40 shadow-sm border-b border-gray-100">
+    <div class="px-4 py-2.5 flex justify-between items-center gap-3">
+      <div class="min-w-0">
+        <h1 class="text-base font-black text-[#003d2d] leading-tight">TIGER <span class="text-[#f42a41]">TOPUP</span></h1>
+        <p class="text-[9px] font-bold uppercase tracking-widest text-gray-400">Admin Panel</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-green-50 border border-green-100 px-2.5 py-1.5 rounded-full">
+          <span class="w-1.5 h-1.5 bg-green-500 rounded-full live-dot"></span>
+          <span class="text-[10px] font-extrabold text-green-700">LIVE</span>
+        </div>
+        <button type="button" onclick="adminLogout()" class="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+          <i class="fas fa-power-off text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ============================================================
+         DASHBOARD — Full overview with BD flag banner and all controls
+         ============================================================ -->
+    <section id="view-dashboard" class="sect p-3">
+      <!-- BD Flag Banner -->
+      <div class="bd-flag-banner">
+        <div class="bd-banner-text">
+          <div class="bd-banner-title">🇧🇩 TIGER TOPUP ADMIN</div>
+          <div class="bd-banner-sub">Welcome back, <span id="dash-welcome">Admin</span></div>
+          <div class="bd-banner-badge"><i class="fas fa-shield-halved text-[8px]"></i> Secure Dashboard</div>
+        </div>
+        <div class="bd-flag-live">
+          <div class="pole"></div>
+          <div class="cloth"></div>
+        </div>
+      </div>
+
+      <!-- Revenue Card -->
+      <div class="revenue-card">
+        <div class="revenue-content">
+          <div class="revenue-label"><i class="fas fa-coins text-amber-200"></i><span>Total Revenue</span></div>
+          <div class="revenue-amount" id="dash-revenue">৳ 0</div>
+          <div class="revenue-split">
+            <div class="revenue-split-item"><div class="lbl">Approved Deposits</div><div class="val" id="dash-total-dep">৳ 0</div></div>
+            <div class="revenue-split-item"><div class="lbl">Today's Orders</div><div class="val" id="dash-today-orders">0</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="stat-card-pro"><div class="stat-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46"><i class="fas fa-users"></i></div><p class="stat-label">Total Users</p><p class="stat-value text-[#065f46]" id="dash-users">0</p></div>
+        <div class="stat-card-pro"><div class="stat-icon" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8);color:#9d174d"><i class="fas fa-shopping-bag"></i></div><p class="stat-label">Total Orders</p><p class="stat-value text-[#9d174d]" id="dash-orders">0</p></div>
+        <div class="stat-card-pro"><div class="stat-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e"><i class="fas fa-clock"></i></div><p class="stat-label">Pending Deposits</p><p class="stat-value text-amber-600" id="dash-pending-dep">0</p></div>
+        <div class="stat-card-pro"><div class="stat-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46"><i class="fas fa-check-double"></i></div><p class="stat-label">Pending Orders</p><p class="stat-value text-emerald-600" id="dash-pending-ord">0</p></div>
+      </div>
+
+      <!-- Overview KPIs -->
+      <div class="section-title">Overview</div>
+      <div class="mb-4">
+        <div class="kpi-row"><div class="kpi-left"><div class="kpi-icon" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46"><i class="fas fa-gamepad"></i></div><span class="kpi-label">Total Products</span></div><span class="kpi-value" id="kpi-products">0</span></div>
+        <div class="kpi-row"><div class="kpi-left"><div class="kpi-icon" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8);color:#9d174d"><i class="fas fa-layer-group"></i></div><span class="kpi-label">Total Categories</span></div><span class="kpi-value" id="kpi-categories">0</span></div>
+        <div class="kpi-row"><div class="kpi-left"><div class="kpi-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e"><i class="fas fa-ticket-alt"></i></div><span class="kpi-label">Active Redeem Codes</span></div><span class="kpi-value" id="kpi-codes">0</span></div>
+        <div class="kpi-row"><div class="kpi-left"><div class="kpi-icon" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#6d28d9"><i class="fas fa-images"></i></div><span class="kpi-label">Banners Live</span></div><span class="kpi-value" id="kpi-banners">0</span></div>
+      </div>
+
+      <!-- ============================================================
+           ALL CONTROLS — Categorized professional layout (no More menu)
+           ============================================================ -->
+      <div class="section-title">Content Management</div>
+      <div class="controls-grid mb-5">
+        <button type="button" onclick="navTo('categories')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#006a4e,#00875f)"><i class="fas fa-layer-group"></i></div>
+          <div class="cinfo"><div class="ct">Categories</div><div class="cs">Product groups</div></div>
+        </button>
+        <button type="button" onclick="navTo('products')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#0d9488,#14b8a6)"><i class="fas fa-gamepad"></i></div>
+          <div class="cinfo"><div class="ct">Games</div><div class="cs">Products list</div></div>
+        </button>
+        <button type="button" onclick="navTo('banners')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#0891b2,#06b6d4)"><i class="fas fa-images"></i></div>
+          <div class="cinfo"><div class="ct">Banners</div><div class="cs">Slider images</div></div>
+        </button>
+        <button type="button" onclick="navTo('codes')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#059669,#10b981)"><i class="fas fa-ticket-alt"></i></div>
+          <div class="cinfo"><div class="ct">Redeem Codes</div><div class="cs">Gift codes</div></div>
+        </button>
+      </div>
+
+      <div class="section-title">Payments & Rewards</div>
+      <div class="controls-grid mb-5">
+        <button type="button" onclick="navTo('deposits')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#f59e0b,#f97316)"><i class="fas fa-wallet"></i></div>
+          <div class="cinfo"><div class="ct">Deposits</div><div class="cs">Approve requests</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('payment')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#e2136e,#a21a54)"><i class="fas fa-credit-card"></i></div>
+          <div class="cinfo"><div class="ct">Numbers</div><div class="cs">bKash/Nagad/Rocket</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('logos')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#7c3aed,#a855f7)"><i class="fas fa-image"></i></div>
+          <div class="cinfo"><div class="ct">Pay Logos</div><div class="cs">Method logos</div></div>
+        </button>
+        <button type="button" onclick="navTo('ranks')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#d97706,#f59e0b)"><i class="fas fa-medal"></i></div>
+          <div class="cinfo"><div class="ct">Rank System</div><div class="cs">Levels & rewards</div></div>
+        </button>
+      </div>
+
+      <div class="section-title">Users & Orders</div>
+      <div class="controls-grid mb-5">
+        <button type="button" onclick="navTo('users')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#0891b2,#06b6d4)"><i class="fas fa-users"></i></div>
+          <div class="cinfo"><div class="ct">Users</div><div class="cs">Manage accounts</div></div>
+        </button>
+        <button type="button" onclick="navTo('orders')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#3b82f6,#2563eb)"><i class="fas fa-shopping-bag"></i></div>
+          <div class="cinfo"><div class="ct">Orders</div><div class="cs">All transactions</div></div>
+        </button>
+      </div>
+
+      <div class="section-title">Site Settings</div>
+      <div class="controls-grid mb-5">
+        <button type="button" onclick="openSettingPage('branding')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#006a4e,#00875f)"><i class="fas fa-paint-brush"></i></div>
+          <div class="cinfo"><div class="ct">Branding</div><div class="cs">Site name, logos</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('appearance')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#f42a41,#c8102e)"><i class="fas fa-palette"></i></div>
+          <div class="cinfo"><div class="ct">Appearance</div><div class="cs">Theme colors</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('popup')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#f97316,#c2410c)"><i class="fas fa-bullhorn"></i></div>
+          <div class="cinfo"><div class="ct">Promo Popup</div><div class="cs">Announcement</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('support')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)"><i class="fas fa-headset"></i></div>
+          <div class="cinfo"><div class="ct">Support Buttons</div><div class="cs">Floating bubbles</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('general')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#64748b,#334155)"><i class="fas fa-cog"></i></div>
+          <div class="cinfo"><div class="ct">General</div><div class="cs">Notice, video</div></div>
+        </button>
+        <button type="button" onclick="openSettingPage('social')" class="control-btn">
+          <div class="ci" style="background:linear-gradient(135deg,#06b6d4,#0e7490)"><i class="fas fa-share-nodes"></i></div>
+          <div class="cinfo"><div class="ct">Social Links</div><div class="cs">FB / TG / YT</div></div>
+        </button>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="section-title">Recent Activity</div>
+      <div id="dash-recent"></div>
+
+      <!-- Logout Card -->
+      <div class="card mt-4" style="border-color:#fee2e2">
+        <div class="card-title" style="color:#dc2626"><i class="fas fa-exclamation-triangle" style="color:#dc2626"></i> Danger Zone</div>
+        <button type="button" onclick="adminLogout()" class="btn-danger"><i class="fas fa-power-off"></i> Log Out</button>
+      </div>
+    </section>
+
+    <!-- DEPOSITS -->
+    <section id="view-deposits" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">Deposits</h2>
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2">
+        <button type="button" onclick="filterDeposits('pending')" id="dep-tab-pending" class="tab-pill on">Pending</button>
+        <button type="button" onclick="filterDeposits('approved')" id="dep-tab-approved" class="tab-pill">Approved</button>
+        <button type="button" onclick="filterDeposits('rejected')" id="dep-tab-rejected" class="tab-pill">Rejected</button>
+      </div>
+      <div id="deposits-list"></div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="view-orders" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">Orders</h2>
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2">
+        <button type="button" onclick="filterOrders('pending')" id="ord-tab-pending" class="tab-pill on">Pending</button>
+        <button type="button" onclick="filterOrders('success')" id="ord-tab-success" class="tab-pill">Completed</button>
+        <button type="button" onclick="filterOrders('refunded')" id="ord-tab-refunded" class="tab-pill">Refunded</button>
+        <button type="button" onclick="filterOrders('all')" id="ord-tab-all" class="tab-pill">All</button>
+      </div>
+      <div id="orders-list"></div>
+    </section>
+
+    <!-- USERS -->
+    <section id="view-users" class="hidden sect p-3">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-black text-[#003d2d]">Users</h2>
+        <button type="button" onclick="openCreateUser()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#006a4e] to-[#00875f] text-white px-3 py-1.5 rounded-full text-[10.5px] font-extrabold shadow-md"><i class="fas fa-plus text-[9px]"></i> Add</button>
+      </div>
+      <div class="relative mb-3"><input type="text" id="user-search" onkeyup="searchUser()" placeholder="Search users..." class="inp pl-9"><i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i></div>
+      <div id="users-list"></div>
+    </section>
+
+    <!-- CATEGORIES -->
+    <section id="view-categories" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">Categories</h2>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-plus-circle"></i> Create Category</div>
+        <div class="field"><label class="field-label">Category Name</label><input type="text" id="cat-name" placeholder="e.g. Free Fire" class="inp"></div>
+        <div class="field"><label class="field-label">Display Order</label><input type="number" id="cat-order" placeholder="e.g. 1" class="inp"></div>
+        <button type="button" onclick="addCategory()" class="btn-navy mt-1"><i class="fas fa-plus"></i> Add Category</button>
+      </div>
+      <div class="section-title">All Categories</div>
+      <div id="categories-list"></div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="view-products" class="hidden sect p-3">
+      <div id="products-main-view">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-black text-[#003d2d]">Games / Products</h2>
+          <button type="button" onclick="openCreateProduct()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#006a4e] to-[#00875f] text-white px-3 py-1.5 rounded-full text-[10.5px] font-extrabold shadow-md"><i class="fas fa-plus text-[9px]"></i> Add</button>
+        </div>
+        <div id="products-grid-list"></div>
+      </div>
+      <div id="packages-manager-view" class="hidden">
+        <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mb-3 flex items-center gap-3">
+          <button type="button" onclick="closePackagesView()" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+          <div class="min-w-0 flex-1"><h3 id="pm-game-title" class="font-extrabold text-[#003d2d] text-sm truncate">Game</h3><p class="text-[10px] text-[#006a4e] font-bold uppercase tracking-widest flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full live-dot"></span> Live Packages</p></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><i class="fas fa-box-open"></i> Add Package</div>
+          <div class="field"><label class="field-label">Package Name</label><input type="text" id="pkg-name" placeholder="e.g. 100 Diamonds" class="inp"></div>
+          <div class="field"><label class="field-label">Price (৳)</label><input type="number" id="pkg-price" placeholder="0" class="inp"></div>
+          <div class="field"><label class="field-label">Icon URL (optional)</label><input type="text" id="pkg-icon" placeholder="Auto-detect if empty" class="inp"></div>
+          <button type="button" id="pkg-add-btn" onclick="addPackage()" class="btn-pink mt-1"><i class="fas fa-plus"></i> Add Package</button>
+        </div>
+        <div class="section-title">All Packages <span id="pkg-count" class="text-[#006a4e]"></span></div>
+        <div id="packages-list"></div>
+      </div>
+    </section>
+
+    <!-- BANNERS -->
+    <section id="view-banners" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">Banners</h2>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-image"></i> Add Banner</div>
+        <div class="field"><label class="field-label">Banner Image URL</label><input type="text" id="banner-url" placeholder="https://..." class="inp"></div>
+        <button type="button" onclick="addBanner()" class="btn-navy mt-1"><i class="fas fa-plus"></i> Upload Banner</button>
+      </div>
+      <div class="section-title">All Banners</div>
+      <div id="banners-list"></div>
+    </section>
+
+    <!-- RANKS -->
+    <section id="view-ranks" class="hidden sect p-3">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-black text-[#003d2d]">Rank Management</h2>
+        <button type="button" onclick="loadDefaultRanks()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#006a4e] to-[#00875f] text-white px-3 py-1.5 rounded-full text-[10.5px] font-extrabold shadow-md"><i class="fas fa-magic text-[9px]"></i> Load Defaults</button>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="card" style="background:linear-gradient(135deg,#f8faf9,#f1f5f9)">
+        <div class="card-title"><i class="fas fa-eye"></i> Live Preview</div>
+        <div id="rank-live-preview" style="background:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;border:1px solid #e2ece8">
+          <div style="width:48px;height:48px;border-radius:50%;background:#f1f5f9;border:2px solid #d7e3dd;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+            <i class="fas fa-medal" style="color:#94a3b8;font-size:20px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <p style="font-weight:900;color:#003d2d;font-size:13px">Rank Name</p>
+            <p style="font-size:10.5px;color:#64748b;margin-top:2px">0 - 0 ৳</p>
+          </div>
+          <span style="font-size:9.5px;font-weight:800;padding:5px 10px;border-radius:20px;background:#dcfce7;color:#166534">Unlocked</span>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="card">
+        <div class="card-title"><i class="fas fa-plus-circle"></i> <span id="rank-form-title">Create New Rank</span></div>
+        <input type="hidden" id="rk-edit-index" value="-1">
+
+        <div class="field"><label class="field-label">Rank Name *</label><input type="text" id="rk-name" placeholder="e.g. Diamond" class="inp" oninput="updateRankPreview()"></div>
+
+        <div class="field">
+          <label class="field-label">Rank Icon PNG URL *</label>
+          <input type="text" id="rk-image" placeholder="https://...your-rank-icon.png" class="inp" oninput="updateRankPreview()">
+          <div id="preview-rank-img" class="img-preview-box" style="min-height:100px;margin-top:8px">
+            <span class="img-hint"><i class="fas fa-image text-lg mb-1 block"></i>PNG image preview</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="field"><label class="field-label">Min Spend (৳)</label><input type="number" id="rk-min" placeholder="0" class="inp" oninput="updateRankPreview()"></div>
+          <div class="field"><label class="field-label">Max Spend (৳)</label><input type="number" id="rk-max" placeholder="1000" class="inp" oninput="updateRankPreview()"></div>
+        </div>
+
+        <div class="field"><label class="field-label">Tagline</label><input type="text" id="rk-tagline" placeholder="Short description" class="inp" oninput="updateRankPreview()"></div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="field"><label class="field-label">Fallback FA Icon</label><input type="text" id="rk-icon" placeholder="fa-medal" value="fa-medal" class="inp"></div>
+          <div class="field"><label class="field-label">Color (hex)</label><input type="text" id="rk-color" placeholder="#006a4e" value="#006a4e" class="inp" oninput="updateRankPreview()"></div>
+        </div>
+
+        <div class="flex gap-2 mt-1">
+          <button type="button" onclick="resetRankForm()" class="btn-ghost" style="flex:1"><i class="fas fa-undo"></i> Reset</button>
+          <button type="button" id="rk-save-btn" onclick="saveRank()" class="btn-pink" style="flex:2"><i class="fas fa-save"></i> Save Rank</button>
+        </div>
+      </div>
+
+      <div class="section-title">All Ranks <span id="ranks-count" class="text-[#006a4e]"></span></div>
+      <div id="ranks-list"></div>
+    </section>
+
+    <!-- CODES -->
+    <section id="view-codes" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">Redeem Codes</h2>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-ticket-alt"></i> Generate Code</div>
+        <div class="field"><label class="field-label">Code</label><input type="text" id="code-value" placeholder="TIGER100" class="inp uppercase font-mono"></div>
+        <div class="field"><label class="field-label">Amount (৳)</label><input type="number" id="code-amount" placeholder="0" class="inp"></div>
+        <button type="button" onclick="addRedeemCode()" class="btn-pink mt-1"><i class="fas fa-plus"></i> Generate Code</button>
+      </div>
+      <div class="section-title">All Codes</div>
+      <div id="codes-list"></div>
+    </section>
+
+    <!-- ================= SETTINGS PAGES ================= -->
+
+    <!-- BRANDING -->
+    <section id="view-settings-branding" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Branding</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-signature"></i> Site Information</div>
+        <div class="field"><label class="field-label">Site Name</label><input type="text" id="set-site-name" placeholder="TIGER TOPUP" class="inp"></div>
+        <div class="field"><label class="field-label">Tagline / Sub Title</label><input type="text" id="set-tagline" placeholder="Best TopUp Service" class="inp"></div>
+        <button type="button" onclick="saveSiteInfo()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Info</button>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-image"></i> Logo Images</div>
+        <div class="img-section">
+          <div class="img-section-head">
+            <div class="img-section-icon" style="background:linear-gradient(135deg,#006a4e,#00875f)"><i class="fas fa-sign-in-alt"></i></div>
+            <div><div class="img-section-title">Login Page Image</div><div class="img-section-sub">Transparent PNG recommended</div></div>
+          </div>
+          <div id="preview-login-img" class="img-preview-box login-preview"><span class="img-hint"><i class="fas fa-image text-lg mb-1 block"></i>No image set</span></div>
+          <input type="text" id="set-user-login-url" placeholder="Paste image URL" class="inp">
+        </div>
+        <div class="img-section">
+          <div class="img-section-head">
+            <div class="img-section-icon" style="background:linear-gradient(135deg,#f42a41,#c8102e)"><i class="fas fa-home"></i></div>
+            <div><div class="img-section-title">Home Page Logo</div><div class="img-section-sub">Header logo</div></div>
+          </div>
+          <div id="preview-home-img" class="img-preview-box"><span class="img-hint"><i class="fas fa-image text-lg mb-1 block"></i>No logo set</span></div>
+          <input type="text" id="set-user-logo-url" placeholder="Paste logo URL" class="inp">
+        </div>
+        <button type="button" onclick="saveBranding()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Logos</button>
+      </div>
+    </section>
+
+    <!-- APPEARANCE -->
+    <section id="view-settings-appearance" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Appearance</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-palette"></i> Theme Colors</div>
+        <div class="field"><label class="field-label">Primary Color</label><input type="text" id="set-primary-color" placeholder="#006a4e" class="inp"></div>
+        <div class="field"><label class="field-label">Accent Color</label><input type="text" id="set-accent-color" placeholder="#f42a41" class="inp"></div>
+        <button type="button" onclick="saveAppearance()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Theme</button>
+      </div>
+    </section>
+
+    <!-- PAYMENT NUMBERS -->
+    <section id="view-settings-payment" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Payment Numbers</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-credit-card"></i> Numbers to Receive Money</div>
+        <div class="field"><label class="field-label" style="color:#e2136e"><i class="fas fa-circle text-[6px] mr-1"></i>bKash Number</label><input type="text" id="set-bkash" placeholder="01XXXXXXXXX" class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#ec1c24"><i class="fas fa-circle text-[6px] mr-1"></i>Nagad Number</label><input type="text" id="set-nagad" placeholder="01XXXXXXXXX" class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#6638e8"><i class="fas fa-circle text-[6px] mr-1"></i>Rocket Number</label><input type="text" id="set-rocket" placeholder="01XXXXXXXXX" class="inp"></div>
+        <button type="button" onclick="savePayment()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Numbers</button>
+      </div>
+    </section>
+
+    <!-- PAYMENT LOGOS -->
+    <section id="view-settings-logos" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Payment Logos</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-wallet"></i> Wallet Pay Image</div>
+        <p class="text-[10px] text-gray-500 mb-2 ml-0.5">Shown on user topup page — Wallet Pay option</p>
+        <div id="preview-wallet-logo" class="img-preview-box"><span class="img-hint"><i class="fas fa-image text-lg mb-1 block"></i>No image set</span></div>
+        <input type="text" id="set-wallet-logo" placeholder="Wallet logo URL" class="inp">
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-bolt"></i> Instant Pay Image</div>
+        <p class="text-[10px] text-gray-500 mb-2 ml-0.5">Shown on user topup page — Instant Pay option</p>
+        <div id="preview-instant-logo" class="img-preview-box"><span class="img-hint"><i class="fas fa-image text-lg mb-1 block"></i>No image set</span></div>
+        <input type="text" id="set-instant-logo" placeholder="Instant Pay logo URL" class="inp">
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-credit-card"></i> Method Logos</div>
+        <p class="text-[10px] text-gray-500 mb-2 ml-0.5">Shown on payment method selection</p>
+        <div class="field"><label class="field-label">bKash Logo URL</label><input type="text" id="set-logo-bkash" placeholder="https://..." class="inp"></div>
+        <div id="preview-logo-bkash" class="img-preview-box" style="min-height:60px"><span class="img-hint">No image</span></div>
+        <div class="field"><label class="field-label">Nagad Logo URL</label><input type="text" id="set-logo-nagad" placeholder="https://..." class="inp"></div>
+        <div id="preview-logo-nagad" class="img-preview-box" style="min-height:60px"><span class="img-hint">No image</span></div>
+        <div class="field"><label class="field-label">Rocket Logo URL</label><input type="text" id="set-logo-rocket" placeholder="https://..." class="inp"></div>
+        <div id="preview-logo-rocket" class="img-preview-box" style="min-height:60px"><span class="img-hint">No image</span></div>
+        <button type="button" onclick="saveLogos()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save All Logos</button>
+      </div>
+    </section>
+
+    <!-- POPUP -->
+    <section id="view-settings-popup" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Promo Popup</h2>
+      </div>
+      <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <div class="card-title !mb-0"><i class="fas fa-bullhorn"></i> Enable Popup</div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="set-popup-enabled" class="sr-only peer">
+            <div class="w-10 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-[#006a4e] after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+          </label>
+        </div>
+        <div class="field"><label class="field-label">Popup Image URL</label><input type="text" id="set-popup-image" placeholder="https://..." class="inp"></div>
+        <div id="preview-popup-image" class="img-preview-box" style="min-height:100px"><span class="img-hint">No image</span></div>
+        <div class="field"><label class="field-label">Popup Title</label><input type="text" id="set-popup-title" placeholder="Title" class="inp"></div>
+        <div class="field"><label class="field-label">Popup Description</label><textarea id="set-popup-desc" rows="2" class="inp"></textarea></div>
+        <div class="field"><label class="field-label">Button Link (optional)</label><input type="text" id="set-popup-link" placeholder="https://..." class="inp"></div>
+        <button type="button" onclick="savePopup()" class="btn-pink mt-1"><i class="fas fa-save"></i> Save Popup</button>
+      </div>
+    </section>
+
+    <!-- SUPPORT -->
+    <section id="view-settings-support" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Support Buttons</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-plus-circle"></i> Add New</div>
+        <div class="field"><label class="field-label">Button Name</label><input type="text" id="sup-name" placeholder="WhatsApp" class="inp"></div>
+        <div class="field"><label class="field-label">Logo URL</label><input type="text" id="sup-logo" placeholder="https://..." class="inp"></div>
+        <div class="field"><label class="field-label">Direct Link</label><input type="text" id="sup-link" placeholder="https://..." class="inp"></div>
+        <button type="button" onclick="addSupport()" class="btn-pink mt-1"><i class="fas fa-plus"></i> Add Support</button>
+      </div>
+      <div class="section-title">All Support Buttons</div>
+      <div id="support-list" class="space-y-2"></div>
+    </section>
+
+    <!-- GENERAL -->
+    <section id="view-settings-general" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">General Settings</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-cog"></i> App Config</div>
+        <div class="field"><label class="field-label">Notice Text (scrolling)</label><textarea id="set-notice" rows="2" class="inp" placeholder="Scrolling notice..."></textarea></div>
+        <div class="field"><label class="field-label">How-to Video Link</label><input type="text" id="set-howto-video" placeholder="https://youtube.com/..." class="inp"></div>
+        <div class="field"><label class="field-label">How-to Thumbnail URL</label><input type="text" id="set-howto-thumb" placeholder="Thumbnail URL" class="inp"></div>
+        <div id="preview-howto-thumb" class="img-preview-box" style="min-height:80px"><span class="img-hint">No image</span></div>
+        <div class="field"><label class="field-label">App Download Link (optional)</label><input type="text" id="set-app-link" placeholder="https://..." class="inp"></div>
+        <div class="field"><label class="field-label">Support Email</label><input type="text" id="set-email" placeholder="support@example.com" class="inp"></div>
+        <button type="button" onclick="saveGeneral()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Config</button>
+      </div>
+
+      <!-- TELEGRAM DUAL ALERTS -->
+      <div class="card" id="telegram-dual-settings">
+        <div class="card-title"><i class="fab fa-telegram" style="color:#229ED9"></i> Telegram Dual Alerts</div>
+        <p class="text-[10px] text-gray-500 mb-3">নতুন ইউজার, ডিপোজিট ও প্রতিটি অর্ডারের নোটিফিকেশন ২টি Chat ID-তে পাঠান। Bot Token সার্ভারে encrypted অবস্থায় থাকবে।</p>
+        <div class="field">
+          <label class="field-label">Bot Token</label>
+          <input type="password" id="set-tg-token" autocomplete="new-password" placeholder="নতুন Bot Token দিন; আগেরটি রাখতে ফাঁকা রাখুন" class="inp">
+          <p id="tg-token-status" class="text-[9px] text-gray-400 mt-1">Token status যাচাই হচ্ছে…</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div class="field">
+            <label class="field-label"><i class="fas fa-user text-purple-500 mr-1"></i>Chat ID 1 (Admin)</label>
+            <input type="text" id="set-tg-chat1" placeholder="123456789" class="inp font-mono">
+          </div>
+          <div class="field">
+            <label class="field-label"><i class="fas fa-users text-blue-500 mr-1"></i>Chat ID 2 (Group/Channel)</label>
+            <input type="text" id="set-tg-chat2" placeholder="-100123456789" class="inp font-mono">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-2">
+          <button type="button" onclick="saveTelegramSettings()" class="btn-navy text-[10px]"><i class="fas fa-save"></i> Save</button>
+          <button type="button" onclick="testTelegramTarget('chat1')" class="btn-ghost text-[10px]" style="color:#7c3aed"><i class="fas fa-paper-plane"></i> Test 1</button>
+          <button type="button" onclick="testTelegramTarget('chat2')" class="btn-ghost text-[10px]" style="color:#2563eb"><i class="fas fa-paper-plane"></i> Test 2</button>
+        </div>
+        <div class="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-[10px] text-emerald-800 flex gap-2 items-start">
+          <i class="fas fa-shield-halved mt-0.5"></i><span>Bot Token frontend-এ দেখানো বা plain text হিসেবে Firestore-এ রাখা হয় না। নোটিফিকেশন Firebase Cloud Functions থেকে পাঠানো হয়।</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOCIAL -->
+    <section id="view-settings-social" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="navTo('dashboard')" class="w-9 h-9 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left text-sm"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Social Links</h2>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fas fa-share-nodes"></i> Connect Links</div>
+        <div class="field"><label class="field-label" style="color:#0088cc"><i class="fab fa-telegram-plane mr-1"></i>Telegram (Support)</label><input type="text" id="set-telegram" placeholder="https://t.me/..." class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#1e6fd9"><i class="fas fa-users mr-1"></i>Join Group Link</label><input type="text" id="set-group-link" placeholder="https://t.me/group..." class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#1877f2"><i class="fab fa-facebook mr-1"></i>Facebook</label><input type="text" id="set-fb" placeholder="https://facebook.com/..." class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#e91e63"><i class="fab fa-instagram mr-1"></i>Instagram</label><input type="text" id="set-insta" placeholder="https://instagram.com/..." class="inp"></div>
+        <div class="field"><label class="field-label" style="color:#ff0000"><i class="fab fa-youtube mr-1"></i>YouTube</label><input type="text" id="set-yt" placeholder="https://youtube.com/..." class="inp"></div>
+        <button type="button" onclick="saveSocial()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Links</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 shadow-[0_-6px_24px_rgba(0,106,78,0.08)] z-40">
+    <div class="flex items-center justify-between px-2 pt-1.5 pb-2">
+      <button type="button" onclick="navTo('dashboard')" class="nvi on" id="nav-dashboard"><i class="fas fa-chart-pie ni"></i><span>Dashboard</span></button>
+      <button type="button" onclick="navTo('orders')" class="nvi" id="nav-orders"><i class="fas fa-shopping-bag ni"></i><span>Orders</span></button>
+      <button type="button" onclick="navTo('users')" class="nvi" id="nav-users"><i class="fas fa-users ni"></i><span>Users</span></button>
+      <button type="button" onclick="navTo('deposits')" class="nvi" id="nav-deposits"><i class="fas fa-wallet ni"></i><span>Deposits</span></button>
+      <button type="button" onclick="navTo('dashboard')" class="nvi" id="nav-controls"><i class="fas fa-grip ni"></i><span>Controls</span></button>
+    </div>
+  </nav>
+</div>
+
+<!-- CREATE PRODUCT -->
+<div id="create-product-modal" class="hidden modal-overlay">
+  <div class="modal-content slide-up">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-plus-circle"></i> Create Game</div><button type="button" onclick="closeCreateProduct()" class="modal-close"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="modal-body">
+      <div class="field"><label class="field-label">Product Name *</label><input type="text" id="cp-name" placeholder="Free Fire Diamonds" class="inp"></div>
+      <div class="field"><label class="field-label">Image URL *</label><input type="text" id="cp-image" placeholder="https://..." class="inp"></div>
+      <div class="field">
+        <label class="field-label">Category *</label>
+        <div id="cp-cat-selector" class="cat-selector"></div>
+        <button type="button" onclick="toggleAddCategoryInline()" class="text-[11px] font-bold text-[#006a4e] flex items-center gap-1 mt-1 mb-2"><i class="fas fa-plus-circle text-[10px]"></i><span id="cp-add-cat-btn-label">Add new category</span></button>
+        <div id="cp-add-cat-inline" class="hidden bg-green-50 border border-green-200 rounded-xl p-3 mb-2">
+          <input type="text" id="cp-new-cat-name" placeholder="New category" class="inp mb-2">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="cancelAddCategoryInline()" class="btn-ghost !py-2 !min-h-[36px] !text-[11px]">Cancel</button>
+            <button type="button" onclick="addCategoryFromProduct()" class="btn-pink !py-2 !min-h-[36px] !text-[11px]"><i class="fas fa-check text-[10px]"></i> Save</button>
+          </div>
+        </div>
+        <input type="hidden" id="cp-category" value="">
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="field"><label class="field-label">Badge</label><input type="text" id="cp-badge" placeholder="NEW" class="inp"></div>
+        <div class="field"><label class="field-label">Badge Type</label>
+          <select id="cp-badge-type" class="inp"><option value="">None</option><option value="new">New</option><option value="hot">Hot</option><option value="default">Default</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">Input Type</label>
+        <div class="grid grid-cols-4 gap-2" id="cp-type-selector">
+          <div class="type-tile on" data-value="uid" onclick="selectTypeTile('uid')"><i class="fas fa-id-card"></i><span class="lbl">UID</span></div>
+          <div class="type-tile" data-value="freefire" onclick="selectTypeTile('freefire')"><i class="fas fa-fire"></i><span class="lbl">Free Fire</span></div>
+          <div class="type-tile" data-value="pubg" onclick="selectTypeTile('pubg')"><i class="fas fa-crosshairs"></i><span class="lbl">PUBG</span></div>
+          <div class="type-tile" data-value="custom" onclick="selectTypeTile('custom')"><i class="fas fa-keyboard"></i><span class="lbl">Custom</span></div>
+        </div>
+        <input type="hidden" id="cp-input-type" value="uid">
+      </div>
+      <div class="field"><label class="field-label">Custom Input Label</label><input type="text" id="cp-input-label" placeholder="Player ID" class="inp"></div>
+      <div class="field"><label class="field-label">Wallet Logo (optional)</label><input type="text" id="cp-wallet-logo" placeholder="Empty = global" class="inp"></div>
+      <div class="field"><label class="field-label">Instant Logo (optional)</label><input type="text" id="cp-instant-logo" placeholder="Empty = global" class="inp"></div>
+      <div class="field"><label class="field-label">Rules (one per line)</label><textarea id="cp-rules" rows="3" class="inp" placeholder="Rule 1&#10;Rule 2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeCreateProduct()" class="btn-ghost" style="flex:1">Cancel</button>
+      <button type="button" id="cp-submit-btn" onclick="submitCreateProduct()" class="btn-pink" style="flex:2"><i class="fas fa-check"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PRODUCT -->
+<div id="edit-product-modal" class="hidden modal-overlay">
+  <div class="modal-content slide-up">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-edit"></i> Edit Product</div><button type="button" onclick="closeEditProduct()" class="modal-close"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ep-id">
+      <div class="field"><label class="field-label">Product Name</label><input type="text" id="ep-name" class="inp"></div>
+      <div class="field"><label class="field-label">Image URL</label><input type="text" id="ep-image" class="inp"></div>
+      <div class="field"><label class="field-label">Wallet Logo</label><input type="text" id="ep-wallet-logo" placeholder="Empty = global" class="inp"></div>
+      <div class="field"><label class="field-label">Instant Logo</label><input type="text" id="ep-instant-logo" placeholder="Empty = global" class="inp"></div>
+      <div class="field"><label class="field-label">Rules</label><textarea id="ep-rules" rows="3" class="inp"></textarea></div>
+      <div class="field"><label class="field-label">Input Label</label><input type="text" id="ep-input-label" class="inp"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeEditProduct()" class="btn-ghost" style="flex:1">Cancel</button>
+      <button type="button" onclick="saveEditProduct()" class="btn-pink" style="flex:2"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE USER -->
+<div id="create-user-modal" class="hidden modal-overlay">
+  <div class="modal-content slide-up">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-user-plus"></i> Create User</div><button type="button" onclick="closeCreateUser()" class="modal-close"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="modal-body">
+      <div class="field"><label class="field-label">Full Name</label><input type="text" id="new-user-name" class="inp"></div>
+      <div class="field"><label class="field-label">Email</label><input type="email" id="new-user-email" class="inp"></div>
+      <div class="field"><label class="field-label">Phone</label><input type="tel" id="new-user-phone" class="inp"></div>
+      <div class="field"><label class="field-label">Password</label><input type="text" id="new-user-pass" placeholder="Min 6 chars" class="inp"></div>
+      <div class="field"><label class="field-label">Starting Balance (৳)</label><input type="number" id="new-user-balance" value="0" class="inp"></div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" onclick="closeCreateUser()" class="btn-ghost" style="flex:1">Cancel</button>
+      <button type="button" onclick="createUser()" class="btn-pink" style="flex:2"><i class="fas fa-check"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER DETAILS -->
+<div id="user-modal" class="hidden modal-overlay">
+  <div class="modal-content slide-up">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-user"></i> User Details</div><button type="button" onclick="closeUserModal()" class="modal-close"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="modal-body">
+      <div class="text-center mb-4">
+        <div class="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#006a4e] to-[#00875f] flex items-center justify-center text-white font-black text-3xl shadow-lg border-4 border-white"><span id="m-avatar">U</span></div>
+        <h3 id="m-name" class="text-lg font-black text-[#003d2d]">User</h3>
+        <p id="m-email" class="text-[11px] text-gray-500 break-all mt-0.5"></p>
+        <p class="text-[10px] text-gray-400 font-mono mt-1">UID: <span id="m-uid">...</span></p>
+      </div>
+      <div class="grid grid-cols-3 gap-2 mb-4">
+        <div class="bg-green-50 border border-green-100 rounded-xl p-2.5 text-center"><p class="text-[9px] font-bold text-gray-500 uppercase">Balance</p><p class="text-sm font-black text-[#006a4e]">৳<span id="m-balance">0</span></p></div>
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-2.5 text-center"><p class="text-[9px] font-bold text-gray-500 uppercase">Orders</p><p id="m-orders" class="text-sm font-black text-blue-600">0</p></div>
+        <div class="bg-purple-50 border border-purple-100 rounded-xl p-2.5 text-center"><p class="text-[9px] font-bold text-gray-500 uppercase">Spent</p><p class="text-sm font-black text-purple-600">৳<span id="m-spent">0</span></p></div>
+      </div>
+      <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 mb-3">
+        <p class="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><i class="fas fa-wallet text-[#006a4e]"></i> Balance Management</p>
+        <input type="number" id="bal-amount" placeholder="Amount" class="inp mb-2">
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <button type="button" onclick="updateBalance(1)" class="bg-green-500 text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1"><i class="fas fa-plus"></i> Add</button>
+          <button type="button" onclick="updateBalance(-1)" class="bg-red-500 text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1"><i class="fas fa-minus"></i> Remove</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <button type="button" onclick="quickBal(50)" class="text-[10px] font-bold bg-white border border-gray-200 px-2.5 py-1 rounded-full text-gray-700">+50</button>
+          <button type="button" onclick="quickBal(100)" class="text-[10px] font-bold bg-white border border-gray-200 px-2.5 py-1 rounded-full text-gray-700">+100</button>
+          <button type="button" onclick="quickBal(500)" class="text-[10px] font-bold bg-white border border-gray-200 px-2.5 py-1 rounded-full text-gray-700">+500</button>
+          <button type="button" onclick="quickBal(1000)" class="text-[10px] font-bold bg-white border border-gray-200 px-2.5 py-1 rounded-full text-gray-700">+1000</button>
+        </div>
+      </div>
+      <div class="bg-gray-50 border border-gray-100 rounded-2xl p-3.5 mb-3">
+        <p class="text-[10px] font-black text-gray-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"><i class="fas fa-pencil text-blue-500"></i> Edit Info</p>
+        <div class="field"><label class="field-label">Name</label><input type="text" id="edit-user-name" class="inp"></div>
+        <div class="field"><label class="field-label">Phone</label><input type="text" id="edit-user-phone" class="inp"></div>
+        <button type="button" onclick="saveUserInfo()" class="btn-navy mt-1"><i class="fas fa-save"></i> Save Changes</button>
+      </div>
+      <button type="button" onclick="deleteUser()" class="btn-danger"><i class="fas fa-trash"></i> Delete User</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div id="confirm-modal" class="hidden modal-overlay center">
+  <div class="modal-content center pop-in">
+    <div class="modal-body text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center"><i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i></div>
+      <h3 id="confirm-title" class="text-base font-black text-[#003d2d] mb-2">Are you sure?</h3>
+      <p id="confirm-msg" class="text-xs text-gray-500 mb-4"></p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button type="button" onclick="closeConfirm()" class="btn-ghost">Cancel</button>
+        <button type="button" id="confirm-yes" class="btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/admin.js" defer></script>
+</body>
+</html>

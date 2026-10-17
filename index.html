@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#006a4e">
+<title>TIGER TOPUP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="/assets/css/user.css">
+</head>
+<body class="select-none">
+
+<!-- AUTH — PROFESSIONAL LOGIN WITH BIG ANIMATED BD FLAG -->
+<section id="auth-sec" class="z-50">
+  <div class="auth-scene">
+    <!-- Large animated Bangladesh flag -->
+    <div class="bd-flag-showcase" aria-hidden="true">
+      <div class="pole"></div>
+      <div class="cloth"></div>
+    </div>
+
+    <!-- Login card -->
+    <div class="auth-card">
+      <h1 id="auth-site-name" class="auth-brand">TIGER <span>TOPUP</span></h1>
+      <p class="auth-tagline">Premium Top-Up Service</p>
+
+      <div class="auth-tabs">
+        <button type="button" onclick="toggleAuth('login')" id="btn-login-view" class="auth-tab on"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <button type="button" onclick="toggleAuth('register')" id="btn-reg-view" class="auth-tab"><i class="fas fa-user-plus"></i> Register</button>
+      </div>
+
+      <div id="login-form">
+        <div class="auth-field"><input type="email" id="login-email" placeholder="Email Address" class="auth-input" autocomplete="email"><i class="fas fa-envelope auth-icon"></i></div>
+        <div class="auth-field"><input type="password" id="login-pass" placeholder="Password" class="auth-input" autocomplete="current-password"><i class="fas fa-lock auth-icon"></i><button type="button" onclick="togglePass('login-pass',this)" class="auth-eye-btn" aria-label="Show password"><i class="fas fa-eye"></i></button></div>
+        <button type="button" onclick="handleLogin()" class="auth-btn"><i class="fas fa-sign-in-alt"></i> LOG IN</button>
+      </div>
+
+      <div id="register-form" class="hidden">
+        <div class="auth-field"><input type="text" id="reg-name" placeholder="Full Name" class="auth-input" autocomplete="name"><i class="fas fa-user auth-icon"></i></div>
+        <div class="auth-field"><input type="email" id="reg-email" placeholder="Email Address" class="auth-input" autocomplete="email"><i class="fas fa-envelope auth-icon"></i></div>
+        <div class="auth-field"><input type="number" id="reg-phone" placeholder="Phone Number" class="auth-input" autocomplete="tel"><i class="fas fa-phone auth-icon"></i></div>
+        <div class="auth-field"><input type="password" id="reg-pass" placeholder="Password (6+ chars)" class="auth-input" autocomplete="new-password"><i class="fas fa-key auth-icon"></i><button type="button" onclick="togglePass('reg-pass',this)" class="auth-eye-btn" aria-label="Show password"><i class="fas fa-eye"></i></button></div>
+        <button type="button" onclick="handleRegister()" class="auth-btn"><i class="fas fa-user-plus"></i> CREATE ACCOUNT</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<div id="app-content" class="app-shell hidden">
+  <header class="bg-white sticky top-0 z-40 shadow-sm border-b border-gray-100">
+    <div class="px-4 py-2.5 flex justify-between items-center gap-3">
+      <img id="header-logo-img" src="https://placehold.co/150x50/006a4e/fff?text=TIGER+TOPUP" class="h-9 object-contain">
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="showSec('addmoney')" class="flex items-center gap-1.5 bg-gradient-to-r from-[#006a4e] to-[#00875f] text-white px-3 py-2 rounded-full shadow-md active:scale-95">
+          <i class="fas fa-wallet text-xs"></i><span class="text-[13px] font-bold">৳<span id="header-balance">0</span></span>
+        </button>
+        <button type="button" onclick="showSec('account')" class="w-10 h-10 rounded-full bg-gradient-to-br from-[#006a4e] to-[#00875f] flex items-center justify-center text-white font-black shadow-md border-2 border-white text-sm active:scale-95"><span id="header-avatar">U</span></button>
+      </div>
+    </div>
+    <div id="notice-bar" class="px-3 pb-3">
+      <div class="bg-gradient-to-r from-[#003d2d] to-[#006a4e] rounded-2xl py-2.5 pl-3 pr-2 flex items-center gap-3 shadow-md" style="min-height:42px">
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="w-6 h-6 rounded-full bg-white/20 border border-white/30 flex items-center justify-center"><span class="w-2 h-2 bg-white rounded-full live-dot"></span></div>
+          <span class="text-[10px] font-extrabold text-white uppercase tracking-widest whitespace-nowrap">Notice</span>
+        </div>
+        <div class="notice-scroll-wrapper"><div id="notice-text" class="notice-scroll-text">Welcome</div></div>
+        <button type="button" onclick="hideNotice()" class="w-7 h-7 rounded-full bg-white/15 border border-white/20 flex items-center justify-center text-white flex-shrink-0"><i class="fas fa-times text-[10px]"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- HOME -->
+    <section id="home-sec" class="sect p-3">
+      <div class="rounded-2xl overflow-hidden shadow-lg h-40 bg-gray-200 relative mb-3">
+        <div id="slider-wrapper" class="flex h-full w-full transition-transform duration-500 ease-out"><div class="w-full h-full shimmer flex-shrink-0"></div></div>
+        <div id="slider-dots" class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10"></div>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <a id="home-support-tg" href="#" target="_blank" class="mini-btn flex-1 bg-gradient-to-r from-[#003d2d] to-[#006a4e] text-white justify-center"><i class="fab fa-telegram-plane text-sm"></i><span>Support</span></a>
+        <a id="home-group" href="#" target="_blank" class="mini-btn flex-1 bg-gradient-to-r from-[#f42a41] to-[#c8102e] text-white justify-center"><i class="fas fa-users text-sm"></i><span>Join Group</span></a>
+      </div>
+      <div id="categories-container"></div>
+      <div class="mt-6 mb-6">
+        <div class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-md">
+          <div class="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 bg-gradient-to-r from-green-50/60 to-transparent">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] flex items-center justify-center text-[#006a4e]"><i class="fas fa-clipboard-check text-base"></i></div>
+              <div><h3 class="font-extrabold text-gray-800 text-base">Recent Orders</h3><p class="text-[10px] font-bold text-green-500 flex items-center gap-1.5 mt-0.5"><span class="w-1.5 h-1.5 bg-green-500 rounded-full live-dot"></span> LIVE</p></div>
+            </div>
+          </div>
+          <div id="recent-orders-list"></div>
+        </div>
+      </div>
+      <div class="bg-gradient-to-br from-[#003d2d] to-[#001a13] text-white pt-8 px-5 rounded-2xl pb-6">
+        <div class="mb-6">
+          <h3 class="font-extrabold text-base tracking-wide mb-3">STAY CONNECTED</h3>
+          <p class="text-[11.5px] text-green-50/90 leading-relaxed mb-4">নিজের টপআপ নিজেই করতে চাইলে, YouTube এ ক্লিক করে ভিডিওটি দেখুন!<br>যেকোন সমস্যা হলে টেলিগ্রাম এ মেসেজ দিবেন।</p>
+          <div class="flex gap-3">
+            <a id="ft-fb" href="#" class="w-11 h-11 rounded-xl border border-white/20 flex items-center justify-center"><i class="fab fa-facebook-f"></i></a>
+            <a id="ft-insta" href="#" class="w-11 h-11 rounded-xl border border-white/20 flex items-center justify-center"><i class="fab fa-instagram"></i></a>
+            <a id="ft-yt" href="#" class="w-11 h-11 rounded-xl border border-white/20 flex items-center justify-center"><i class="fab fa-youtube"></i></a>
+            <a id="ft-mail" href="#" class="w-11 h-11 rounded-xl border border-white/20 flex items-center justify-center"><i class="far fa-envelope"></i></a>
+          </div>
+        </div>
+        <div class="mb-6">
+          <h3 class="font-extrabold text-base tracking-wide mb-3">SUPPORT CENTER</h3>
+          <a id="ft-support" href="#" target="_blank" class="block">
+            <div class="border border-white/20 rounded-2xl p-3.5 flex items-center gap-3">
+              <div class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center"><i class="fab fa-telegram-plane text-white text-xl"></i></div>
+              <div class="border-l border-white/20 pl-3"><p class="text-[11px] font-bold text-white/90">Help line [9AM-12PM]</p><p class="text-[11px] text-green-50/80 mt-0.5">টেলিগ্রামে সাপোর্ট</p></div>
+            </div>
+          </a>
+        </div>
+        <div class="text-center pt-3 border-t border-white/10"><p class="text-[10.5px] text-green-50/70">© <span id="footer-site-name">Loading...</span> <span id="footer-year"></span> | All Rights Reserved</p></div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="orders-sec" class="hidden sect p-3">
+      <h2 class="text-lg font-black text-[#003d2d] mb-3">My Orders</h2>
+      <div id="my-orders-list"></div>
+    </section>
+
+    <!-- ADD MONEY -->
+    <section id="addmoney-sec" class="hidden sect p-3">
+      <div id="am-view-1">
+        <div class="am-hero">
+          <span class="am-pill"><i class="fas fa-bolt"></i> Instant &amp; Secure</span>
+          <h1 class="am-title">Add Money to <span id="am-brand">Loading...</span></h1>
+          <p class="am-desc">Fast, protected wallet recharge for uninterrupted top-ups.</p>
+          <div class="am-wallet-visual"><i class="fas fa-wallet"></i><div class="am-plus-badge"><i class="fas fa-plus"></i></div></div>
+        </div>
+        <div class="am-card">
+          <div class="am-card-head">
+            <div class="am-card-icon"><i class="fas fa-credit-card"></i></div>
+            <div><div class="am-card-title">Enter Amount</div><div class="am-card-sub">Type the amount you want to add.</div></div>
+          </div>
+          <label class="am-field-label">Amount</label>
+          <div class="am-input-wrap"><span class="cur">৳</span><input type="number" id="dep-amount" placeholder="Enter amount" inputmode="numeric"></div>
+          <div class="am-hint"><i class="fas fa-circle-check"></i> Amount will be added to your wallet</div>
+          <div class="grid grid-cols-4 gap-2 mt-3">
+            <button type="button" onclick="quickAmt(100)" class="bg-green-50 text-[#006a4e] py-2 rounded-xl text-xs font-bold border border-green-200">+100</button>
+            <button type="button" onclick="quickAmt(500)" class="bg-green-50 text-[#006a4e] py-2 rounded-xl text-xs font-bold border border-green-200">+500</button>
+            <button type="button" onclick="quickAmt(1000)" class="bg-green-50 text-[#006a4e] py-2 rounded-xl text-xs font-bold border border-green-200">+1000</button>
+            <button type="button" onclick="quickAmt(5000)" class="bg-green-50 text-[#006a4e] py-2 rounded-xl text-xs font-bold border border-green-200">+5000</button>
+          </div>
+          <button type="button" onclick="goToAmountNext()" class="am-add-btn"><i class="fas fa-wallet"></i> Add Money Securely <i class="fas fa-arrow-right text-xs"></i></button>
+          <div class="am-features">
+            <div class="am-feature"><i class="fas fa-bolt"></i><div class="lbl">Instant</div><div class="sub">Quick update</div></div>
+            <div class="am-feature"><i class="fas fa-lock"></i><div class="lbl">Secure</div><div class="sub">Protected</div></div>
+            <div class="am-feature"><i class="fas fa-headphones"></i><div class="lbl">Support</div><div class="sub">Help anytime</div></div>
+          </div>
+          <div class="am-safe-box">
+            <div class="am-safe-icon"><i class="fas fa-shield-halved"></i></div>
+            <div><h4>100% Safe &amp; Secure</h4><p>Your payment is encrypted and handled through trusted payment partners.</p></div>
+          </div>
+        </div>
+        <div class="am-video-card">
+          <div class="am-video-head">
+            <div class="am-video-icon"><i class="fas fa-play"></i></div>
+            <div><div class="am-video-title">How to add money</div><div class="am-video-sub">Watch the short guide before completing your payment.</div></div>
+          </div>
+          <div class="am-video-box">
+            <img id="how-to-thumb" src="https://placehold.co/640x360/d1fae5/006a4e?text=Video">
+            <div class="am-video-play"><button type="button" onclick="openHowToVideo()"><i class="fas fa-play"></i></button></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="am-view-2" class="hidden">
+        <button type="button" onclick="backToAmount()" class="flex items-center gap-2 text-[12px] font-bold text-gray-600 mb-3"><i class="fas fa-arrow-left"></i> Back</button>
+        <div class="am-card">
+          <div class="am-card-head">
+            <div class="am-card-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+            <div><div class="am-card-title">Select Payment Method</div><div class="am-card-sub">Choose one to continue</div></div>
+          </div>
+          <div class="pay-page-amount">
+            <div><div class="lbl">Amount to Add</div><div class="val">৳ <span id="am-amount-show">0</span></div></div>
+            <div class="method-pill"><i class="fas fa-shield-halved text-green-500 text-xs"></i> Secure</div>
+          </div>
+          <div id="am-methods-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CODES -->
+    <section id="codes-sec" class="hidden sect p-3">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-black text-[#003d2d]">My Codes</h2>
+        <button type="button" onclick="openRedeemModal()" class="flex items-center gap-1.5 bg-gradient-to-r from-[#006a4e] to-[#00875f] text-white px-3.5 py-2 rounded-full text-[11px] font-extrabold shadow-md"><i class="fas fa-arrow-right-to-bracket text-[10px]"></i> Redeem</button>
+      </div>
+      <div class="bg-gradient-to-br from-[#006a4e] to-[#00875f] rounded-2xl p-4 mb-4 flex items-center gap-3 shadow-lg">
+        <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur border border-white/25 flex items-center justify-center flex-shrink-0"><i class="fas fa-ticket-alt text-white text-lg"></i></div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[11px] font-black text-white uppercase tracking-widest">Redeem Codes</p>
+          <p class="text-[10.5px] text-green-50/90 mt-0.5">আপনার Redeem করা সব কোড এখানে দেখুন</p>
+        </div>
+      </div>
+      <div id="codes-list"></div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section id="account-sec" class="hidden sect p-3">
+      <div class="acc-hero">
+        <div class="relative z-10">
+          <div class="flex items-center gap-4">
+            <div class="relative"><div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white font-black text-2xl border-2 border-white/40"><span id="acc-avatar">U</span></div><span class="absolute bottom-0.5 right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-[#006a4e]"></span></div>
+            <div class="min-w-0 flex-1">
+              <h2 id="acc-name" class="text-lg font-black text-white truncate">User</h2>
+              <p id="acc-email" class="text-[11px] text-white/75 truncate mt-0.5">-</p>
+              <div class="flex items-center gap-2 mt-2 flex-wrap"><span class="verified-pill"><i class="fas fa-circle text-[6px] text-green-500"></i> Verified</span><div id="acc-rank-badge-wrap"></div></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-4 pt-3 border-t border-white/15 text-[10.5px]">
+            <div><p class="text-white/70 font-bold uppercase tracking-wider text-[9px]">Support PIN</p><p id="acc-pin" class="text-white font-mono font-extrabold mt-0.5">-----</p></div>
+            <div class="text-right"><p class="text-white/70 font-bold uppercase tracking-wider text-[9px]">Level</p><p id="acc-member-level" class="text-white font-extrabold mt-0.5">1</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="balance-card">
+        <div class="relative z-10">
+          <div class="flex justify-between items-start mb-2">
+            <div><p class="text-[10px] font-black uppercase tracking-widest text-white/85">Wallet Balance</p><p class="text-white/70 text-[10px] mt-0.5">Available to spend</p></div>
+            <button type="button" onclick="refreshBalance()" class="w-9 h-9 rounded-full bg-white/20 backdrop-blur border border-white/30 flex items-center justify-center text-white"><i class="fas fa-sync-alt text-xs"></i></button>
+          </div>
+          <p class="text-white font-black text-4xl mb-3 tracking-tight">৳ <span id="acc-balance">0</span></p>
+          <button type="button" onclick="showSec('addmoney')" class="w-full bg-white text-[#006a4e] py-3 rounded-xl font-black text-[12.5px] flex items-center justify-center gap-2"><i class="fas fa-plus-circle"></i> Add Money</button>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-3 flex items-center gap-4">
+        <div id="acc-rank-icon" class="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden"></div>
+        <div class="flex-1 min-w-0"><h4 id="acc-member-rank" class="font-extrabold text-[#003d2d] text-[15px]">-</h4><p class="text-[11px] text-gray-500 font-medium mt-0.5">Current Rank</p></div>
+      </div>
+      <div class="bg-gradient-to-br from-[#006a4e] via-[#00875f] to-[#00a878] rounded-2xl p-5 text-white shadow-xl mb-3">
+        <div class="flex items-center gap-4 mb-4">
+          <div class="w-16 h-16 rounded-full bg-white/20 backdrop-blur flex items-center justify-center border-2 border-white/30 overflow-hidden"><span id="acc-rank-icon-big"></span></div>
+          <div class="text-right flex-1"><p class="text-[10px] text-white/80 font-bold uppercase tracking-widest">Current Rank</p><p id="acc-rank-name-big" class="text-xl font-black">-</p></div>
+        </div>
+        <p id="acc-rank-tagline" class="text-sm text-white/90 mb-3">-</p>
+        <div class="flex justify-between items-center mb-1.5 text-xs font-bold"><span id="acc-rank-range">0 - 0 ৳</span><span id="acc-rank-percent">0%</span></div>
+        <div class="w-full h-2 bg-white/25 rounded-full overflow-hidden mb-3"><div id="acc-rank-progress-bar" class="h-full bg-gradient-to-r from-green-200 to-green-400 rounded-full transition-all duration-500" style="width:0%"></div></div>
+        <p class="text-xs text-white/95 text-center">Need only <b id="acc-rank-remaining" class="text-white">0</b> ৳ to unlock <b id="acc-rank-next" class="text-white">-</b></p>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="stat-card-pro"><div class="stat-icon"><i class="fas fa-clipboard-list"></i></div><p class="stat-label">Orders</p><p class="stat-value" id="stat-orders">0</p></div>
+        <div class="stat-card-pro"><div class="stat-icon"><i class="fas fa-coins"></i></div><p class="stat-label">Total Spent</p><p class="stat-value" id="stat-spend">0 ৳</p></div>
+        <div class="stat-card-pro"><div class="stat-icon"><i class="fas fa-calendar-week"></i></div><p class="stat-label">Weekly Spend</p><p class="stat-value" id="stat-weekly">0 ৳</p></div>
+        <div class="stat-card-pro"><div class="stat-icon"><i class="fas fa-star"></i></div><p class="stat-label">Rank</p><p class="stat-value" id="stat-rank">-</p></div>
+      </div>
+      <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm mb-3">
+        <div class="mb-4"><p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1">Rank Journey</p><div class="flex justify-between items-center"><h3 class="text-lg font-black text-[#003d2d]">Your Path</h3><span id="rank-journey-progress" class="text-sm font-bold text-gray-500">0/8</span></div></div>
+        <div id="rank-journey-list" class="rank-journey-container"><div class="rank-journey-line"></div></div>
+      </div>
+      <div class="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm mb-3">
+        <p class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest mb-1">Account</p>
+        <h3 class="text-base font-black text-[#003d2d] mb-4">User Information</h3>
+        <div class="info-row"><div class="info-ic"><i class="fas fa-user"></i></div><div class="flex-1 min-w-0"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Name</p><p id="info-name" class="text-sm font-extrabold text-[#003d2d] truncate">-</p></div></div>
+        <div class="info-row"><div class="info-ic"><i class="fas fa-phone"></i></div><div class="flex-1 min-w-0"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</p><p id="info-phone" class="text-sm font-extrabold text-[#003d2d] truncate">-</p></div></div>
+        <div class="info-row"><div class="info-ic"><i class="fas fa-envelope"></i></div><div class="flex-1 min-w-0"><p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Email</p><p id="info-email" class="text-sm font-extrabold text-[#003d2d] truncate">-</p></div></div>
+      </div>
+      <button type="button" onclick="handleLogout()" class="w-full bg-white border border-red-100 rounded-2xl p-4 flex items-center gap-3 shadow-sm active:scale-98"><div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500"><i class="fas fa-sign-out-alt"></i></div><span class="font-extrabold text-red-500 text-[13px]">Log Out</span></button>
+      <div class="text-center text-[10px] text-gray-400 py-4 mt-2">© <span id="footer-site-name-2">Loading...</span> <span id="footer-year-2"></span></div>
+    </section>
+
+    <!-- TOPUP -->
+    <section id="topup-sec" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="showSec('home')" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left"></i></button>
+        <h2 id="topup-game-title" class="text-base font-black text-[#003d2d] truncate">Game</h2>
+      </div>
+      <div class="bg-white rounded-2xl p-3.5 shadow-sm flex items-center gap-3.5 border border-gray-100 mb-3">
+        <img id="topup-game-img" src="" class="w-16 h-16 rounded-2xl object-cover bg-gray-100 border border-gray-100">
+        <div class="min-w-0 flex-1"><h3 id="topup-sub-title" class="font-bold text-[#003d2d] text-sm truncate">Game</h3><p class="text-[10px] text-gray-400 font-medium mt-1 flex items-center gap-1"><i class="fas fa-bolt text-[#006a4e]"></i> ইনস্ট্যান্ট টপ আপ</p></div>
+      </div>
+      <a href="javascript:void(0)" onclick="openHowToVideo()" class="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-3.5 py-2.5 mb-3"><i class="fas fa-circle-play text-[#006a4e] text-base"></i><span class="text-[12px] font-bold text-[#006a4e] flex-1">কিভাবে অর্ডার করবেন?</span><i class="fas fa-arrow-right text-[#006a4e] text-xs"></i></a>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-3 border border-gray-100">
+        <div class="flex items-center gap-2.5 mb-3.5"><span class="w-7 h-7 rounded-full bg-gradient-to-br from-[#003d2d] to-[#006a4e] flex items-center justify-center text-white text-[12px] font-black">1</span><h3 class="font-extrabold text-[#003d2d] text-[14px]">Select Recharge</h3></div>
+        <div id="product-loader" class="text-center py-10 hidden"><div class="spinner"></div></div>
+        <div id="products-grid" class="pkg-grid"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-3 border border-gray-100">
+        <div class="flex items-center gap-2.5 mb-3.5"><span class="w-7 h-7 rounded-full bg-gradient-to-br from-[#003d2d] to-[#006a4e] flex items-center justify-center text-white text-[12px] font-black">2</span><h3 class="font-extrabold text-[#003d2d] text-[14px]">Account Info</h3></div>
+        <p id="input-field-label" class="text-[12.5px] font-bold text-[#003d2d] mb-2.5">আইডি দিন</p>
+        <div class="relative"><input type="text" id="game-player-id" placeholder="আইডি দিন" class="inp font-bold pl-11"><i id="input-field-icon" class="fas fa-id-card absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i></div>
+        <p id="input-field-help" class="text-[10px] text-gray-400 mt-2.5 ml-1"></p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-4 shadow-sm mb-3 border border-gray-100">
+        <div class="flex items-center gap-2.5 mb-3.5"><span class="w-7 h-7 rounded-full bg-gradient-to-br from-[#003d2d] to-[#006a4e] flex items-center justify-center text-white text-[12px] font-black">3</span><h3 class="font-extrabold text-[#003d2d] text-[14px]">Select one option</h3></div>
+        <div class="pay-option-grid">
+          <div class="pay-option on" id="pay-opt-wallet" onclick="selectPayOption('wallet')">
+            <span class="check-mark"><i class="fas fa-check"></i></span>
+            <div class="pay-logo-wrap"><img id="wallet-opt-logo" src="https://placehold.co/200x80/006a4e/fff?text=Wallet+Pay" onerror="this.src='https://placehold.co/200x80/006a4e/fff?text=Wallet+Pay'"></div>
+            <div class="option-label">Wallet Pay</div>
+          </div>
+          <div class="pay-option" id="pay-opt-instant" onclick="selectPayOption('instant')">
+            <span class="check-mark"><i class="fas fa-check"></i></span>
+            <div class="pay-logo-wrap"><img id="instant-opt-logo" src="https://placehold.co/200x80/006a4e/fff?text=Instant+Pay" onerror="this.src='https://placehold.co/200x80/006a4e/fff?text=Instant+Pay'"></div>
+            <div class="option-label">Instant Pay</div>
+          </div>
+        </div>
+        <div class="balance-info-row">
+          <div class="info-text"><i class="fas fa-info-circle"></i> আপনার একাউন্ট ব্যালেন্স <b>৳ <span id="topup-balance">0</span></b></div>
+          <button type="button" onclick="refreshBalance()" class="icon-refresh-btn"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div class="balance-info-row" style="border-top:1px solid #f1f5f9">
+          <div class="info-text"><i class="fas fa-info-circle"></i> প্রোডাক্ট কিনতে প্রয়োজন <b>৳ <span id="total-price">0</span></b></div>
+        </div>
+        <button type="button" onclick="buyNowClick()" class="btn-navy mt-3">Buy Now</button>
+      </div>
+      <div id="game-rules-box" class="rules-box hidden">
+        <div class="rules-header"><i class="fas fa-clipboard-list"></i><h3>Rules &amp; Conditions</h3></div>
+        <div class="rules-list" id="game-rules-text"></div>
+      </div>
+    </section>
+
+    <!-- PAYMENT -->
+    <section id="payment-sec" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="backFromPaymentPage()" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Complete Payment</h2>
+      </div>
+      <div class="pay-page-amount">
+        <div><div class="lbl">Payable Amount</div><div class="val">৳ <span id="pp-amount">0</span></div></div>
+        <div class="method-pill"><i class="fas fa-shield-halved text-green-500"></i> Secure</div>
+      </div>
+      <div class="method-tab-bar" id="pp-method-tabs"></div>
+      <div class="pay-page-hero" id="pp-hero-bg" style="background:linear-gradient(135deg,#e2136e,#ff4b8b)">
+        <img id="pp-brand-logo" class="brand-logo" src="" alt="">
+      </div>
+      <div class="pay-instructions-hero" id="pp-inst-bg" style="background:linear-gradient(135deg,#d81b60,#e91e63)">
+        <h2>ট্রানজেকশন আইডি দিন</h2>
+        <div class="pay-trx-input"><i class="fas fa-receipt text-gray-400"></i><input type="text" id="pp-trx" placeholder="ট্রানজেকশন আইডি দিন" autocomplete="off"></div>
+        <div class="pay-steps">
+          <div class="pay-step"><div class="dot"></div><p><b id="pp-ussd">*247#</b> ডায়াল করে <b id="pp-m1">bKash</b> মোবাইল মেনুতে যান অথবা <b id="pp-m2">bKash</b> অ্যাপ খুলুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>Send Money -এ ক্লিক করুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>এই নম্বরে টাকা পাঠান</p></div>
+          <div class="pay-number-box"><span class="num" id="pp-number">01XXXXXXXXX</span><button class="pay-copy-btn" onclick="copyPpNumber(this)"><i class="fas fa-copy"></i> কপি</button></div>
+          <div class="pay-step"><div class="dot"></div><p>টাকার পরিমাণঃ <b>৳ <span id="pp-amount-2">0</span></b></p></div>
+          <div class="pay-step"><div class="dot"></div><p>নিশ্চিত করে PIN লিখুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>TrxID কপি করুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>TrxID লিখে ভেরিফাই চাপুন</p></div>
+        </div>
+      </div>
+      <button type="button" onclick="submitInstantOrder()" class="pay-verify-btn" id="pp-verify-btn" style="background:linear-gradient(135deg,#8b0000,#b91c1c)"><i class="fas fa-check-circle"></i> ভেরিফাই</button>
+    </section>
+
+    <!-- AM-PAYMENT -->
+    <section id="am-payment-sec" class="hidden sect p-3">
+      <div class="flex items-center gap-3 mb-3">
+        <button type="button" onclick="backFromAmPayment()" class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-600"><i class="fas fa-arrow-left"></i></button>
+        <h2 class="text-base font-black text-[#003d2d]">Add Money Payment</h2>
+      </div>
+      <div class="pay-page-amount">
+        <div><div class="lbl">Amount to Add</div><div class="val">৳ <span id="ap-amount">0</span></div></div>
+        <div class="method-pill"><i class="fas fa-shield-halved text-green-500"></i> Secure</div>
+      </div>
+      <div class="method-tab-bar" id="ap-method-tabs"></div>
+      <div class="pay-page-hero" id="ap-hero-bg" style="background:linear-gradient(135deg,#e2136e,#ff4b8b)">
+        <img id="ap-brand-logo" class="brand-logo" src="" alt="">
+      </div>
+      <div class="pay-instructions-hero" id="ap-inst-bg" style="background:linear-gradient(135deg,#d81b60,#e91e63)">
+        <h2>ট্রানজেকশন আইডি দিন</h2>
+        <div class="pay-trx-input"><i class="fas fa-receipt text-gray-400"></i><input type="text" id="ap-trx" placeholder="ট্রানজেকশন আইডি দিন" autocomplete="off"></div>
+        <div class="pay-steps">
+          <div class="pay-step"><div class="dot"></div><p><b id="ap-ussd">*247#</b> ডায়াল করে <b id="ap-m1">bKash</b> মোবাইল মেনুতে যান</p></div>
+          <div class="pay-step"><div class="dot"></div><p>Send Money -এ ক্লিক করুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>এই নম্বরে টাকা পাঠান</p></div>
+          <div class="pay-number-box"><span class="num" id="ap-number">01XXXXXXXXX</span><button class="pay-copy-btn" onclick="copyApNumber(this)"><i class="fas fa-copy"></i> কপি</button></div>
+          <div class="pay-step"><div class="dot"></div><p>টাকার পরিমাণঃ <b>৳ <span id="ap-amount-2">0</span></b></p></div>
+          <div class="pay-step"><div class="dot"></div><p>নিশ্চিত করে PIN লিখুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>TrxID কপি করুন</p></div>
+          <div class="pay-step"><div class="dot"></div><p>TrxID লিখে ভেরিফাই চাপুন</p></div>
+        </div>
+      </div>
+      <div class="am-card">
+        <label class="am-field-label">Sender Number</label>
+        <div class="am-input-wrap"><i class="fas fa-mobile-alt text-gray-400"></i><input type="tel" id="ap-sender" placeholder="01XXXXXXXXX" maxlength="11" inputmode="tel" style="font-size:15px;letter-spacing:1px"></div>
+      </div>
+      <button type="button" onclick="submitAddMoney()" class="pay-verify-btn" id="ap-verify-btn" style="background:linear-gradient(135deg,#8b0000,#b91c1c)"><i class="fas fa-check-circle"></i> ভেরিফাই</button>
+    </section>
+  </main>
+
+  <div class="fixed bottom-24 right-4 z-40 flex flex-col items-end gap-2.5" style="max-width:480px">
+    <div id="support-bubbles" class="flex flex-col items-end gap-2.5"></div>
+    <button type="button" onclick="toggleSupport()" id="support-btn" class="w-14 h-14 rounded-full bg-gradient-to-br from-[#003d2d] to-[#006a4e] flex items-center justify-center text-white shadow-2xl support-ring"><i class="fas fa-headset text-xl" id="support-icon"></i></button>
+  </div>
+
+  <nav class="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white border-t border-gray-100 shadow-[0_-6px_24px_rgba(0,106,78,0.08)] z-40">
+    <div class="flex items-center justify-between px-3 pt-1.5 pb-2">
+      <button type="button" onclick="showSec('home')" class="nvi on" id="nav-home"><i class="fas fa-home ni"></i><span>Home</span></button>
+      <button type="button" onclick="showSec('orders')" class="nvi" id="nav-orders"><i class="fas fa-shopping-bag ni"></i><span>Orders</span></button>
+      <button type="button" onclick="showSec('addmoney')" class="relative -mt-7 active:scale-90">
+        <div class="rounded-full bg-gradient-to-br from-[#003d2d] to-[#006a4e] flex items-center justify-center text-white shadow-xl border-4 border-white" style="width:60px;height:60px"><i class="fas fa-plus text-2xl"></i></div>
+      </button>
+      <button type="button" onclick="showSec('codes')" class="nvi" id="nav-codes"><i class="fas fa-ticket-alt ni"></i><span>Codes</span></button>
+      <button type="button" onclick="showSec('account')" class="nvi" id="nav-account"><i class="fas fa-user ni"></i><span>Account</span></button>
+    </div>
+  </nav>
+</div>
+
+<!-- PROMO -->
+<div id="promo-modal" class="hidden modal-overlay center">
+  <div class="promo-modal-content pop-in">
+    <img id="promo-img" class="promo-img" src="">
+    <div class="promo-body">
+      <h3 id="promo-title" class="promo-title">Special Offer</h3>
+      <p id="promo-desc" class="promo-desc"></p>
+      <a id="promo-btn" href="#" target="_blank" class="promo-action"><i class="fas fa-gift"></i> ক্লিক করুন</a>
+      <button type="button" onclick="closePromo()" class="promo-close"><i class="fas fa-times"></i> CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- REDEEM -->
+<div id="redeem-modal" class="hidden modal-overlay center">
+  <div class="modal-content center pop-in">
+    <div class="modal-header"><div class="modal-title"><i class="fas fa-gift"></i> Redeem Code</div><button type="button" onclick="closeRedeemModal()" class="modal-close"><i class="fas fa-times text-xs"></i></button></div>
+    <div class="modal-body">
+      <p class="text-xs text-gray-500 mb-4">Enter your redeem code below to get rewards.</p>
+      <input type="text" id="redeem-code" placeholder="Enter Code" class="inp uppercase font-mono tracking-widest text-center font-bold mb-4">
+      <button type="button" onclick="redeemCode()" class="btn-navy"><i class="fas fa-check"></i> REDEEM NOW</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/js/user.js" defer></script>
+</body>
+</html>

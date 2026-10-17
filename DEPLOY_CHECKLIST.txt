@@ -1,0 +1,1 @@
+Before deploy: verify .firebaserc project ID; create admins/{UID}; set TELEGRAM_ENCRYPTION_KEY secret; install functions dependencies; deploy functions+hosting; test both Telegram targets; review Firestore rules and wallet security.
